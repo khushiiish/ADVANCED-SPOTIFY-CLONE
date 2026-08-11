@@ -38,7 +38,7 @@ console.log({ albums });
                     >
                         <HomeIcon className="mr-2 size-5" />
 
-                        <span className="hidden md:inline">Home</span>
+                        <span>Home</span>
                     </Link>
 
                     <Link
@@ -52,20 +52,20 @@ console.log({ albums });
                         )}
                     >
                         <MessageCircle className="mr-2 size-5" />
-                        <span className="hidden md:inline">Messages</span>
+                        <span>Messages</span>
                     </Link>
                 </div>
             </div>
 
-            <div className="flex-1 rounded-lg bg-zinc-900 p-4 overflow-hidden">
+            <div className="flex-1 rounded-lg bg-zinc-900 p-4 overflow-hidden flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center text-white px-2">
                         <Library className="size-5 mr-2" />
-                        <span className="hidden md:inline"> Playlists</span>
+                        <span>Playlists</span>
                     </div>
                 </div>
 
-                <ScrollArea className="h-[calc(100vh-300px)]">
+                <ScrollArea className="h-[calc(100vh-220px)]">
                     <div className="space-y-2">
                         {isLoading ? 
                             <PlaylistSkeleton />
@@ -77,7 +77,7 @@ console.log({ albums });
                                >
                                 <img src={album.imageUrl} alt="Playlist img"
                                 className="size-12 rounded-md flex-shrink-0 object-cover" />
-                                <div className="flex-1 min-w-0 hidden md:block">
+                                <div className="flex-1 min-w-0">
                                     <p className="font-medium truncate">
                                         {album.title}
 
