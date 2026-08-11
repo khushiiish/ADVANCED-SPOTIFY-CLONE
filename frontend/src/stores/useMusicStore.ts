@@ -25,7 +25,7 @@ export const useMusicStore=create<MusicStore>((set)=>({
         });
         try{
             const response=await axiosInstance.get("/albums");
-            set({albums:response.data});
+            set({albums:response.data.albums});
         }catch(error: any){
             set({error:error.response.data.message});
         }finally{

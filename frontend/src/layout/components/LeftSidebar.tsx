@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import  PlaylistSkeleton from "@/components/skeletons/PlaylistSkeleton";
+import { useMusicStore } from "@/stores/useMusicStore";
+import type { Album } from "@/types";
 
 const LeftSidebar = () => {
  
@@ -68,8 +70,8 @@ console.log({ albums });
                         {isLoading ? 
                             <PlaylistSkeleton />
                         : (
-                            albums.map((album)=>(
-                               <Link to={`/albums/${album.id}`}
+                            albums.map((album: Album)=>(
+                               <Link to={`/albums/${album._id}`}
                                key={album._id}
                                className="p-2 hover:bg-zinc-800 rounded-md flex items-center gap-3 group cursor-pointer"
                                >

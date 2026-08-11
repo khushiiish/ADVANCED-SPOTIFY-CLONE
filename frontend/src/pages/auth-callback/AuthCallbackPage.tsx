@@ -2,9 +2,8 @@ import { Card,CardContent } from '@/components/ui/card'
 import { Loader } from "lucide-react"
 import { axiosInstance }from '@/lib/axios'
 import { useUser } from '@clerk/clerk-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-
 
 const AuthCallbackPage = () => {
 const {isLoaded,user} =useUser();
@@ -15,7 +14,8 @@ const syncAttempted=useRef(false);
   useEffect(()=>{
     const syncUser=async () =>{
       try{
-        if(!isLoaded || !user)return;
+        if(!isLoaded || !user || syncAttempted.current) return;
+        syncAttempted.current = true;
         await axiosInstance.post("/auth/callback",{
           id:user.id,
           firstName:user.firstName,
