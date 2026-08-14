@@ -21,7 +21,7 @@ const AlbumPage = () => {
 		if (albumId) fetchAlbumById(albumId);
 	}, [fetchAlbumById, albumId]);
 
-	if (isLoading) return null;
+	if (isLoading || !currentAlbum) return null;
 
 	const handlePlayAlbum = () => {
 		if (!currentAlbum) return;

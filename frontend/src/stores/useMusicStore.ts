@@ -57,7 +57,7 @@ export const useMusicStore=create<MusicStore>((set)=>({
         });
         try{
             const response=await axiosInstance.get(`/albums/${id}`);
-            set({ currentAlbum:response.data });
+            set({ currentAlbum:response.data.album });
 
         }catch(error:any){
             set({error: error.response.data.message});
@@ -93,7 +93,8 @@ export const useMusicStore=create<MusicStore>((set)=>({
             const response=await axiosInstance.get("/songs/made-for-you");
             set({madeForYouSongs:response.data});   
     }catch(error:any){
-        set({error:error.message.data.message });
+        set({ error: error.response?.data?.message || error.message });
+
     }finally{
         set({isLoading:false});
     }
@@ -108,7 +109,7 @@ export const useMusicStore=create<MusicStore>((set)=>({
     const response=await axiosInstance.get("/songs/trending");
     set({trendingSongs:response.data});
     }catch (error:any){
-        set({error:error.message.data.message});
+    set({ error: error.response?.data?.message || error.message });
     }finally{
         set({isLoading:false});
     
