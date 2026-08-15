@@ -2,6 +2,8 @@ import { Outlet } from "react-router-dom";
 import LeftSidebar from "./components/LeftSidebar";
 import FriendsActivity from "./components/FriendsActivity";
 import AudioPlayer from "./components/AudioPlayer"
+import PlaybackControls from "./components/PlaybackControls";
+
 
 
 const MainLayout = () => {
@@ -21,6 +23,7 @@ const MainLayout = () => {
 			<div className='w-[280px] h-full shrink-0 flex flex-col'>
 				<FriendsActivity />
 			</div>
+			<PlaybackControls />
 
 
 		</div>
