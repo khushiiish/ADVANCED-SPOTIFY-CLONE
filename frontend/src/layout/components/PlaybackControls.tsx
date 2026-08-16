@@ -79,7 +79,7 @@ const PlaybackControls = () => {
             </Button>
 
             <Button
-              size="icon"
+              size='icon'
               variant="ghost"
               className="hover:text-white text-zinc-400"
               onClick={playPrevious}
