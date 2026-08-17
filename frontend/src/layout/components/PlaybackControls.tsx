@@ -1,8 +1,32 @@
+import { formatDuration } from "@/pages/album/AlbumPage";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Button } from "@base-ui/react/button";
 import { Slider } from "@base-ui/react/slider";
-import { Laptop2, ListMusic, Mic2, Pause, Play, Repeat, Shuffle, SkipBack, SkipForward, Volume1 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import {
+  Laptop2,
+  ListMusic,
+  Mic2,
+  Pause,
+  Play,
+  Repeat,
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Sliders,
+  Volume1,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+const formatTime = (time: number) => {
+  if (!Number.isFinite(time) || time < 0) {
+    return "0:00";
+  }
+
+  const minutes = Math.floor(time / 60);
+  const seconds = Math.floor(time % 60);
+
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
 
 const PlaybackControls = () => {
   const { currentSong, isPlaying, togglePlay, playNext, playPrevious } =
@@ -11,42 +35,73 @@ const PlaybackControls = () => {
   const [volume, setVolume] = useState(75);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    audioRef.current = document.querySelector("audio");
+    const audio = document.querySelector("audio");
 
-    const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio) {
+      audioRef.current = null;
+      return;
+    }
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    audioRef.current = audio;
 
-    audio.addEventListener("timeupdate", updateTime);
-    audio.addEventListener("loadedmetadata", updateDuration);
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    const updateDuration = () => {
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    };
 
     const handleEnded = () => {
       usePlayerStore.setState({ isPlaying: false });
     };
 
+    audio.addEventListener("timeupdate", updateTime);
+    audio.addEventListener("loadedmetadata", updateDuration);
+    audio.addEventListener("durationchange", updateDuration);
     audio.addEventListener("ended", handleEnded);
+
+    // Set initial values
+    updateTime();
+    updateDuration();
+
     return () => {
       audio.removeEventListener("timeupdate", updateTime);
       audio.removeEventListener("loadedmetadata", updateDuration);
+      audio.removeEventListener("durationchange", updateDuration);
       audio.removeEventListener("ended", handleEnded);
     };
   }, [currentSong]);
 
   const handleSeek = (value: number[]) => {
+    const audio = audioRef.current;
+
+    if (!audio || value.length === 0) return;
+
+    audio.currentTime = value[0];
+    setCurrentTime(value[0]);
+  };
+
+  const handleVolumeChange = (value: number[]) => {
+    if (value.length === 0) return;
+
+    const newVolume = value[0];
+
+    setVolume(newVolume);
+
     if (audioRef.current) {
-      audioRef.current.currentTime = value[0];
+      audioRef.current.volume = newVolume / 100;
     }
   };
 
   return (
     <footer className="h-20 sm:h-24 bg-zinc-900 border-t border-zinc-800 px-4">
       <div className="flex justify-between items-center h-full max-w-[1800px] mx-auto">
-        {/* currently playing song */}
+        {/* Currently playing song */}
         <div className="hidden sm:flex items-center gap-4 min-w-[180px] w-[30%]">
           {currentSong && (
             <>
@@ -55,10 +110,12 @@ const PlaybackControls = () => {
                 alt={currentSong.title}
                 className="w-14 h-14 object-cover rounded-md"
               />
+
               <div className="flex-1 min-w-0">
                 <div className="font-medium truncate hover:underline cursor-pointer">
                   {currentSong.title}
                 </div>
+
                 <div className="text-sm text-zinc-400 truncate hover:underline cursor-pointer">
                   {currentSong.artist}
                 </div>
@@ -67,8 +124,8 @@ const PlaybackControls = () => {
           )}
         </div>
 
-        {/* player controls */}
-         <div className="flex flex-col items-center gap-2 flex-1 max-w-full sm:max-w-[45%]">
+        {/* Player controls */}
+        <div className="flex flex-col items-center gap-2 flex-1 max-w-full sm:max-w-[45%]">
           <div className="flex items-center gap-4 sm:gap-6">
             <Button
               size="icon"
@@ -79,7 +136,7 @@ const PlaybackControls = () => {
             </Button>
 
             <Button
-              size='icon'
+              size="icon"
               variant="ghost"
               className="hover:text-white text-zinc-400"
               onClick={playPrevious}
@@ -100,6 +157,7 @@ const PlaybackControls = () => {
                 <Play className="h-5 w-5" />
               )}
             </Button>
+
             <Button
               size="icon"
               variant="ghost"
@@ -109,20 +167,22 @@ const PlaybackControls = () => {
             >
               <SkipForward className="h-4 w-4" />
             </Button>
+
             <Button
               size="icon"
               variant="ghost"
               className="hidden sm:inline-flex hover:text-white text-zinc-400"
             >
-              <Repeat
-               className="h-4 w-4" />
+              <Repeat className="h-4 w-4" />
             </Button>
           </div>
 
+          {/* Progress bar */}
           <div className="hidden sm:flex items-center gap-2 w-full">
-            <div className="text-xs text-zinc-400">
+            <div className="text-xs text-zinc-400 w-8 text-right">
               {formatTime(currentTime)}
             </div>
+
             <Slider
               value={[currentTime]}
               max={duration || 100}
@@ -130,11 +190,15 @@ const PlaybackControls = () => {
               className="w-full hover:cursor-grab active:cursor-grabbing"
               onValueChange={handleSeek}
             />
-            <div className="text-xs text-zinc-400">{formatTime(duration)}</div>
+
+            <div className="text-xs text-zinc-400 w-8">
+              {formatDuration(duration)}
+            </div>
           </div>
         </div>
-        {/* volume controls */}
-         <div className="hidden sm:flex items-center gap-4 min-w-[180px] w-[30%] justify-end">
+
+        {/* Volume controls */}
+        <div className="hidden sm:flex items-center gap-4 min-w-[180px] w-[30%] justify-end">
           <Button
             size="icon"
             variant="ghost"
@@ -142,6 +206,7 @@ const PlaybackControls = () => {
           >
             <Mic2 className="h-4 w-4" />
           </Button>
+
           <Button
             size="icon"
             variant="ghost"
@@ -149,6 +214,7 @@ const PlaybackControls = () => {
           >
             <ListMusic className="h-4 w-4" />
           </Button>
+
           <Button
             size="icon"
             variant="ghost"
@@ -166,21 +232,15 @@ const PlaybackControls = () => {
               <Volume1 className="h-4 w-4" />
             </Button>
 
-            <Slider
+            <Sliders
               value={[volume]}
               max={100}
               step={1}
               className="w-24 hover:cursor-grab active:cursor-grabbing"
-              onValueChange={(value) => {
-                setVolume(value[0]);
-                if (audioRef.current) {
-                  audioRef.current.volume = value[0] / 100;
-                }
-              }}
+              onValueChange={handleVolumeChange}
             />
           </div>
         </div>
-      </div> 
       </div>
     </footer>
   );
