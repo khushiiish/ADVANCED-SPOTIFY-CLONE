@@ -1,7 +1,7 @@
 import { formatDuration } from "@/pages/album/AlbumPage";
 import { usePlayerStore } from "@/stores/usePlayerStore";
 import { Button } from "@base-ui/react/button";
-import { Slider } from "@base-ui/react/slider";
+import * as Slider from "@base-ui/react/slider";
 import {
   Laptop2,
   ListMusic,
@@ -12,7 +12,7 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
-  Sliders,
+  
   Volume1,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -232,7 +232,7 @@ const PlaybackControls = () => {
               <Volume1 className="h-4 w-4" />
             </Button>
 
-            <Sliders
+            <Slider
               value={[volume]}
               max={100}
               step={1}
