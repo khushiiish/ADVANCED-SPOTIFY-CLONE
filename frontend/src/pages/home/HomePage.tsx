@@ -5,6 +5,7 @@ import FeaturedSection from './components/FeaturedSection';
 import SectionGrid from './components/SectionGrid';
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePlayerStore } from '@/stores/usePlayerStore';
 
 
 const HomePage = () => {
@@ -19,13 +20,21 @@ const HomePage = () => {
   
 
   }=useMusicStore();
+  const { initializeQueue }=usePlayerStore();
 
   useEffect(()=>{
     fetchFeaturedSongs();
     fetchMadeForYouSongs();
     fetchTrendingSongs();
   },[fetchFeaturedSongs,fetchMadeForYouSongs,fetchTrendingSongs]);
-  console.log({isLoading,madeForYouSongs,featuredSongs,trendingSongs});
+
+
+  useEffect(()=>{
+    if(madeForYouSongs.length>0 && featuredSongs.length>0 && trendingSongs.length>0){
+      const allSongs=[...featuredSongs,...madeForYouSongs,...trendingSongs];
+      initializeQueue(allSongs);
+    }
+  },[initializeQueue,featuredSongs,madeForYouSongs,trendingSongs])
   
   return (
     <div className="h-full overflow-hidden rounded-lg bg-gradient-to-b from-zinc-800 to-zinc-900">
