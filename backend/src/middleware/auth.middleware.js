@@ -14,6 +14,7 @@ export const requireAdmin = async (req, res, next) => {
         const userEmail = currentUser.primaryEmailAddress?.emailAddress?.trim().toLowerCase();
 
         const isAdmin = adminEmail && userEmail && adminEmail === userEmail;
+        console.log(`[Admin Check] Configured Admin Email: '${adminEmail}', Logged-in User Email: '${userEmail}', Matches: ${isAdmin}`);
 
         if (!isAdmin) {
             return res.status(403).json({ message: "Unauthorised - you must be an admin" });
