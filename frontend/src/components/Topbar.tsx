@@ -25,10 +25,10 @@ const Topbar = () => {
             to="/admin"
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "gap-2 text-sm font-medium"
+              "gap-2 text-sm font-medium border-zinc-700 bg-zinc-800/80 hover:bg-zinc-700 text-white"
             )}
           >
-            <LayoutDashboardIcon className="size-4" />
+            <LayoutDashboardIcon className="size-4 text-emerald-400" />
             <span className="hidden sm:inline">Admin Dashboard</span>
             <span className="sm:hidden">Admin</span>
           </Link>

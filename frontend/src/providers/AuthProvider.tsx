@@ -19,7 +19,7 @@ const AuthProvider=({children}: {children:React.ReactNode})=>{
 
     const {getToken}=useAuth()
     const [loading,setLoading]=useState(true);
-    const {checkAdminStatus}=useAuthStore()
+    const {checkAdminStatus, reset}=useAuthStore()
 
     useEffect(()=>{
         const initAuth=async()=>{
@@ -28,12 +28,13 @@ const AuthProvider=({children}: {children:React.ReactNode})=>{
                 updateApiToken(token);
                 if(token){
                     await checkAdminStatus();
-
+                } else {
+                    reset();
                 }
-                
 
             }catch(error:any){
                 updateApiToken(null);
+                reset();
                 console.log("Error in auth provider", error)
                 
             }finally{

@@ -26,9 +26,7 @@ export const useAuthStore=create<AuthStore>((set)=>({
             set({isAdmin:response.data.admin});
 
         }catch(error:any){
-            set({isAdmin:false,error:error.response.data.message});
-
-
+            set({isAdmin:false,error:error.response?.data?.message || "Failed to check admin status"});
         }finally{
             set({isLoading:false});
         }
