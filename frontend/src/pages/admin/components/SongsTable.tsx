@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useMusicStore } from "@/stores/useMusicStore"
-import { Calendar, Table } from "lucide-react";
+import { Calendar, Table, Trash2 } from "lucide-react";
 
 const SongsTable = () => {
- const {songs,isLoading,error}=   useMusicStore();
+ const {songs,isLoading,error,deleteSong}=   useMusicStore();
 
  if(isLoading){
     return(
@@ -53,7 +53,9 @@ const SongsTable = () => {
         <div className="flex gap-2 justify-end">
            <Button variant={"ghost"}
            size={"sm"}
-           className="text-red-400 hover:text-red-300 hover:bg-red-400/10 ">
+           className="text-red-400 hover:text-red-300 hover:bg-red-400/10 "
+           onClick={()=>{deleteSong(song._id)}}>
+            <Trash2 className="size-4"/>
 
             </Button> 
         </div>
