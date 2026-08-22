@@ -17,18 +17,28 @@ const updateApiToken=(token:string | null)=>{
 
 const AuthProvider=({children}: {children:React.ReactNode})=>{
 
-    const {getToken}=useAuth()
+    const {getToken, userId, isLoaded}=useAuth()
     const [loading,setLoading]=useState(true);
     const {checkAdminStatus, reset}=useAuthStore()
 
     useEffect(()=>{
         const initAuth=async()=>{
             try{
-                const token=await getToken()
-                updateApiToken(token);
-                if(token){
-                    await checkAdminStatus();
+                if (userId) {
+                    let token = await getToken();
+                    if (!token) {
+                        // Small retry delay if Clerk token is not immediately available
+                        await new Promise((res) => setTimeout(res, 500));
+                        token = await getToken();
+                    }
+                    updateApiToken(token);
+                    if (token) {
+                        await checkAdminStatus();
+                    } else {
+                        reset();
+                    }
                 } else {
+                    updateApiToken(null);
                     reset();
                 }
 
@@ -41,9 +51,11 @@ const AuthProvider=({children}: {children:React.ReactNode})=>{
                 setLoading(false);
             }
     };
-    initAuth()
+    if (isLoaded) {
+        initAuth();
+    }
 
-},[getToken])
+},[getToken, userId, isLoaded])
 
 if(loading) return(
     <div className="h-screen w-full flex items-center justify-center">

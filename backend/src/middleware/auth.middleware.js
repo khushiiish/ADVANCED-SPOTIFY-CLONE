@@ -11,7 +11,13 @@ export const requireAdmin = async (req, res, next) => {
     try {
         const currentUser = await clerkClient.users.getUser(req.auth.userId);
         const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
-        const userEmail = currentUser.primaryEmailAddress?.emailAddress?.trim().toLowerCase();
+
+        const userEmail = (
+            currentUser.primaryEmailAddress?.emailAddress ||
+            currentUser.emailAddresses?.find(e => e.id === currentUser.primaryEmailAddressId)?.emailAddress ||
+            currentUser.emailAddresses?.[0]?.emailAddress ||
+            ""
+        ).trim().toLowerCase();
 
         const isAdmin = adminEmail && userEmail && adminEmail === userEmail;
         console.log(`[Admin Check] Configured Admin Email: '${adminEmail}', Logged-in User Email: '${userEmail}', Matches: ${isAdmin}`);
