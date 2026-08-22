@@ -60,7 +60,7 @@ const AddAlbumDialog = () => {
 
   return (
     <Dialog open={albumDialogOpen} onOpenChange={setAlbumDialogOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger >
         <Button className="bg-violet-500 hover:bg-violet-600 text-white">
           <Plus className="mr-2 h-4 w-4" />
           Add Album
