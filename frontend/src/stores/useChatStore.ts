@@ -60,67 +60,82 @@ export const useChatStore=create<ChatStore>((set,get)=>({
         }
     },
 
-    initSocket:(userId:string)=>{
-        if(!get().isConnected){
-            socket.auth={userId};
+    initSocket: (userId: string) => {
+        if (!userId) return;
+
+        socket.auth = { userId };
+
+        socket.off("connect");
+        socket.off("users_online");
+        socket.off("activities");
+        socket.off("user_connected");
+        socket.off("user_disconnected");
+        socket.off("receive_message");
+        socket.off("message_sent");
+        socket.off("activity_updated");
+
+        socket.on("connect", () => {
+            set({ isConnected: true });
+            socket.emit("user_connected", userId);
+        });
+
+        socket.on("users_online", (users: string[]) => {
+            set({ onlineUsers: new Set(users) });
+        });
+
+        socket.on("activities", (activities: [string, string][]) => {
+            set({ userActivities: new Map(activities) });
+        });
+
+        socket.on("user_connected", (connectedUserId: string) => {
+            set((state) => ({
+                onlineUsers: new Set([...state.onlineUsers, connectedUserId]),
+            }));
+            get().fetchUsers();
+        });
+
+        socket.on("user_disconnected", (disconnectedUserId: string) => {
+            set((state) => {
+                const newOnlineUsers = new Set(state.onlineUsers);
+                newOnlineUsers.delete(disconnectedUserId);
+                return { onlineUsers: newOnlineUsers };
+            });
+        });
+
+        socket.on("receive_message", (message: Message) => {
+            set((state) => ({
+                messages: [...state.messages, message],
+            }));
+        });
+
+        socket.on("message_sent", (message: Message) => {
+            set((state) => ({
+                messages: [...state.messages, message],
+            }));
+        });
+
+        socket.on("activity_updated", ({ userId: activityUserId, activity }) => {
+            set((state) => {
+                const newActivities = new Map(state.userActivities);
+                newActivities.set(activityUserId, activity);
+                return { userActivities: newActivities };
+            });
+        });
+
+        if (!socket.connected) {
             socket.connect();
-            socket.emit("user_connected",userId);
-
-            socket.on("users_online",(users:string[])=>{
-                set({ onlineUsers:new Set(users) });
-
-            })
-
-            socket.on("activities",(activities:[string,string][])=>{
-                set({ userActivities:new Map(activities) });
-            });
-            socket.on("user_connected",(userId:string)=>{
-                set((state)=>({
-                    onlineUsers:new Set([...state.onlineUsers,userId]),
-                }));
-                const existingUser = get().users.find((u) => u.clerkId === userId);
-                if (!existingUser) {
-                    get().fetchUsers();
-                }
-            });
-            socket.on("user_disconnected",(userId:string)=>{
-                set((state)=>{
-                    const newOnlineUsers=new Set(state.onlineUsers);
-                    newOnlineUsers.delete(userId);
-                    return { onlineUsers:newOnlineUsers };
-                })
-            });
-
-            socket.on("receive_message",(message:Message)=>{
-                set((state)=>({
-                    messages:[...state.messages,message],
-                }))
-            });
-            socket.on("message_sent",(message:Message)=>{
-                set((state)=>({
-                    messages:[...state.messages,message],
-                }))
-            });
-            socket.on("activity_updated",({ userId,activity })=>{
-                set((state)=>{
-                    const newActivities=new Map(state.userActivities);
-                    newActivities.set(userId,activity);
-                    return { userActivities:newActivities };
-                })
-            });
-
-            set({ isConnected:true });
+        } else {
+            set({ isConnected: true });
+            socket.emit("user_connected", userId);
         }
-
     },
 
-    disconnectSocket:()=>{
-        if(get().isConnected){
-        socket.disconnect();
-        set({ isConnected:false });
-
+    disconnectSocket: () => {
+        if (socket.connected) {
+            socket.disconnect();
         }
-},
+        set({ isConnected: false });
+    },
     sendMessage:async(receiverId,senderId,content)=>{
         const socket=get().socket;
         if(!socket)return;
