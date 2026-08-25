@@ -10,7 +10,7 @@ export const initializeSocket=(server)=>{
         }
     });
 
-    const userSocket=new Map();
+    const userSockets=new Map();
     const userActivities=new Map();
 
     io.on("connection",(socket)=>{
