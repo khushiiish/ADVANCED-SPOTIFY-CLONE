@@ -26,9 +26,11 @@ interface ChatStore {
 
 }
 
-const socket=io("http://localhost:5000", {
-    autoConnect:false,//only connect if user is authenticated
-    withCredentials:true,
+const baseURL = import.meta.env.MODE === "development" ? "http://localhost:5000" : "/";
+
+const socket = io(baseURL, {
+    autoConnect: false, // only connect if user is authenticated
+    withCredentials: true,
 });
 
 export const useChatStore=create<ChatStore>((set,get)=>({

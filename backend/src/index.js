@@ -29,7 +29,10 @@ initializeSocket(httpServer);
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin:
+      process.env.NODE_ENV === "production"
+        ? true
+        : ["http://localhost:3000", "http://localhost:5173"],
     credentials: true,
   }),
 );
@@ -71,9 +74,13 @@ app.use("/api/albums", albumRoutes);
 app.use("/api/stats", statRoutes);
 
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  const distPath = fs.existsSync(path.join(__dirname, "../frontend/dist"))
+    ? path.join(__dirname, "../frontend/dist")
+    : path.join(__dirname, "frontend/dist");
+
+  app.use(express.static(distPath));
   app.get(/.*/, (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
 
