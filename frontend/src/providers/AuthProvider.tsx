@@ -18,47 +18,47 @@ const updateApiToken=(token:string | null)=>{
 
 const AuthProvider=({children}: {children:React.ReactNode})=>{
 
-    const {getToken, userId}=useAuth()
+    const {getToken, userId, isLoaded, isSignedIn}=useAuth()
     const [loading,setLoading]=useState(true);
-    const {checkAdminStatus}=useAuthStore();
+    const {checkAdminStatus, reset}=useAuthStore();
     const {initSocket,disconnectSocket}=useChatStore()
 
     useEffect(()=>{
         const initAuth=async()=>{
             try{
-                
+                if(!isLoaded) return;
+
+                if (isSignedIn && userId) {
                     const token = await getToken();
-                   
                     updateApiToken(token);
                     if (token) {
                         await checkAdminStatus();
-                        if(userId) initSocket(userId);
-                    } 
-                
-
+                        initSocket(userId);
+                    }
+                } else {
+                    updateApiToken(null);
+                    reset();
+                }
             }catch(error:any){
                 updateApiToken(null);
-                
-                console.log("Error in auth provider", error)
-                
+                reset();
+                console.log("Error in auth provider", error);
             }finally{
-                setLoading(false);
+                if(isLoaded){
+                    setLoading(false);
+                }
             }
-    };
+        };
     
         initAuth();
         return ()=>disconnectSocket();
-    
+    },[getToken, userId, isLoaded, isSignedIn, checkAdminStatus, reset, initSocket, disconnectSocket])
 
-},[getToken, userId, checkAdminStatus,initSocket,disconnectSocket])
-
-if(loading) return(
-    <div className="h-screen w-full flex items-center justify-center">
-        <Loader className="size-8 text-emerald-500 animate-spin" />
-
-    </div>
-
-)
+    if(loading) return(
+        <div className="h-screen w-full flex items-center justify-center">
+            <Loader className="size-8 text-emerald-500 animate-spin" />
+        </div>
+    )
 
     return <div>{children}</div>
 };

@@ -1,7 +1,25 @@
-import { clerkClient } from '@clerk/express'
+import { clerkClient, getAuth } from '@clerk/express';
+
+const getAuthUserId = (req) => {
+    try {
+        const auth = getAuth(req);
+        if (auth?.userId) return auth.userId;
+    } catch {
+        // Ignore and fallback
+    }
+    if (typeof req.auth === 'function') {
+        try {
+            return req.auth()?.userId;
+        } catch {
+            return null;
+        }
+    }
+    return req.auth?.userId || null;
+};
 
 export const protectRoute = async (req, res, next) => {
-    if (!req.auth.userId) {
+    const userId = getAuthUserId(req);
+    if (!userId) {
         return res.status(401).json({ message: "Unauthorized--you must be logged in" });
     }
     next();
@@ -9,7 +27,12 @@ export const protectRoute = async (req, res, next) => {
 
 export const requireAdmin = async (req, res, next) => {
     try {
-        const currentUser = await clerkClient.users.getUser(req.auth.userId);
+        const userId = getAuthUserId(req);
+        if (!userId) {
+            return res.status(401).json({ message: "Unauthorized--you must be logged in" });
+        }
+
+        const currentUser = await clerkClient.users.getUser(userId);
         const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 
         const userEmail = (
@@ -19,7 +42,8 @@ export const requireAdmin = async (req, res, next) => {
             ""
         ).trim().toLowerCase();
 
-        const isAdmin = adminEmail && userEmail && adminEmail === userEmail;
+        const adminEmails = (adminEmail || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+        const isAdmin = adminEmails.includes(userEmail);
         console.log(`[Admin Check] Configured Admin Email: '${adminEmail}', Logged-in User Email: '${userEmail}', Matches: ${isAdmin}`);
 
         if (!isAdmin) {

@@ -4,14 +4,21 @@ import { useChatStore } from "@/stores/useChatStore";
 import { useUser } from "@clerk/clerk-react";
 import { HeadphonesIcon, Music, Users } from "lucide-react";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const FriendsActivity = () => {
-	const { users, fetchUsers, onlineUsers, userActivities } = useChatStore();
+	const { users, fetchUsers, onlineUsers, userActivities, setSelectedUser } = useChatStore();
 	const { user } = useUser();
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		if (user) fetchUsers();
 	}, [fetchUsers, user]);
+
+	const handleUserClick = (targetUser: any) => {
+		setSelectedUser(targetUser);
+		navigate("/chat");
+	};
 
 	return (
 		<div className='h-full bg-zinc-900 rounded-lg flex flex-col'>
@@ -33,6 +40,7 @@ const FriendsActivity = () => {
 						return (
 							<div
 								key={user._id}
+								onClick={() => handleUserClick(user)}
 								className='cursor-pointer hover:bg-zinc-800/50 p-3 rounded-md transition-colors group'
 							>
 								<div className='flex items-start gap-3'>

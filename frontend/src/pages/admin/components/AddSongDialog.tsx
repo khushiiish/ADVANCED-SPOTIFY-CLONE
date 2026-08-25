@@ -90,7 +90,7 @@ const AddSongDialog = () => {
 
 	return (
 		<Dialog open={songDialogOpen} onOpenChange={setSongDialogOpen}>
-			<DialogTrigger asChild>
+			<DialogTrigger>
 				<Button className='bg-emerald-500 hover:bg-emerald-600 text-black'>
 					<Plus className='mr-2 h-4 w-4' />
 					Add Song
@@ -189,7 +189,7 @@ const AddSongDialog = () => {
 						<label className='text-sm font-medium'>Album (Optional)</label>
 						<Select
 							value={newSong.album}
-							onValueChange={(value) => setNewSong({ ...newSong, album: value })}
+							onValueChange={(value) => setNewSong({ ...newSong, album: value || "" })}
 						>
 							<SelectTrigger className='bg-zinc-800 border-zinc-700'>
 								<SelectValue placeholder='Select album' />
