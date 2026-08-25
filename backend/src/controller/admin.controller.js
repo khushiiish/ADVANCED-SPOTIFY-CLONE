@@ -48,8 +48,8 @@ const uploadToCloudinary = async (file) => {
         }
 
         const port = process.env.PORT || 5000;
-        const host = process.env.BACKEND_URL || `http://localhost:${port}`;
-        return `${host}/uploads/${uniqueFileName}`;
+        const host = process.env.BACKEND_URL || (process.env.NODE_ENV === "production" ? "" : `http://localhost:${port}`);
+        return host ? `${host}/uploads/${uniqueFileName}` : `/uploads/${uniqueFileName}`;
     }
 
     throw new Error("No file content provided for upload");

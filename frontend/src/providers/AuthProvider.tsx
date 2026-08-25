@@ -21,6 +21,26 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { initSocket, disconnectSocket } = useChatStore();
 
     useEffect(() => {
+        const interceptor = axiosInstance.interceptors.request.use(async (config) => {
+            if (isSignedIn) {
+                try {
+                    const token = await getToken();
+                    if (token) {
+                        config.headers.Authorization = `Bearer ${token}`;
+                    }
+                } catch (e) {
+                    console.log("Error getting token for request:", e);
+                }
+            }
+            return config;
+        });
+
+        return () => {
+            axiosInstance.interceptors.request.eject(interceptor);
+        };
+    }, [getToken, isSignedIn]);
+
+    useEffect(() => {
         const initAuth = async () => {
             try {
                 if (!isLoaded) return;
