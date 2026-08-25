@@ -24,7 +24,7 @@ interface NewSong {
 }
 
 const AddSongDialog = () => {
-	const { albums } = useMusicStore();
+	const { albums, fetchSongs, fetchStats } = useMusicStore();
 	const [songDialogOpen, setSongDialogOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -53,9 +53,9 @@ const AddSongDialog = () => {
 
 			const formData = new FormData();
 
-			formData.append("title", newSong.title);
-			formData.append("artist", newSong.artist);
-			formData.append("duration", newSong.duration);
+			formData.append("title", newSong.title || files.audio.name.replace(/\.[^/.]+$/, ""));
+			formData.append("artist", newSong.artist || "Unknown Artist");
+			formData.append("duration", newSong.duration || "0");
 			if (newSong.album && newSong.album !== "none") {
 				formData.append("albumId", newSong.album);
 			}
@@ -80,9 +80,12 @@ const AddSongDialog = () => {
 				audio: null,
 				image: null,
 			});
+			setSongDialogOpen(false);
+			await Promise.all([fetchSongs(), fetchStats()]);
 			toast.success("Song added successfully");
 		} catch (error: any) {
-			toast.error("Failed to add song: " + error.message);
+			const errorMsg = error.response?.data?.message || error.message || "Failed to add song";
+			toast.error("Failed to add song: " + errorMsg);
 		} finally {
 			setIsLoading(false);
 		}

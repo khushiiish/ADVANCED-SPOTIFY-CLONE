@@ -18,11 +18,13 @@ import songRoutes from "./routes/song.route.js";
 import albumRoutes from "./routes/album.route.js";
 import statRoutes from "./routes/stat.route.js";
 
+import os from "os";
+
 dotenv.config();
 
 const __dirname = path.resolve();
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5000;
 
 const httpServer = createServer(app);
 initializeSocket(httpServer);
@@ -42,29 +44,13 @@ app.use(clerkMiddleware()); // this will add auth to req obj => req.auth
 app.use(
   fileUpload({
     useTempFiles: true,
-    tempFileDir: path.join(__dirname, "tmp"),
+    tempFileDir: os.tmpdir(),
     createParentPath: true,
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB  max file size
+      fileSize: 15 * 1024 * 1024, // 15MB max file size
     },
   }),
 );
-
-// cron jobs
-const tempDir = path.join(process.cwd(), "tmp");
-cron.schedule("0 * * * *", () => {
-  if (fs.existsSync(tempDir)) {
-    fs.readdir(tempDir, (err, files) => {
-      if (err) {
-        console.log("error", err);
-        return;
-      }
-      for (const file of files) {
-        fs.unlink(path.join(tempDir, file), (err) => {});
-      }
-    });
-  }
-});
 
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
@@ -86,13 +72,11 @@ if (process.env.NODE_ENV === "production") {
 
 // error handler
 app.use((err, req, res, next) => {
+  console.error("Express Error Handler:", err);
   res
-    .status(500)
+    .status(err.status || 500)
     .json({
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Internal server error"
-          : err.message,
+      message: err.message || "Internal server error",
     });
 });
 
