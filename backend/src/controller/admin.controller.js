@@ -1,8 +1,11 @@
-import Song from "../models/song.model.js"
-import Album from "../models/album.model.js"
-import cloudinary from "../lib/cloudinary.js"
+import fs from "fs";
+import path from "path";
+import Song from "../models/song.model.js";
+import Album from "../models/album.model.js";
+import cloudinary from "../lib/cloudinary.js";
 
 const uploadToCloudinary = async (file) => {
+    // 1. Attempt Cloudinary upload
     try {
         if (file.tempFilePath) {
             const result = await cloudinary.uploader.upload(file.tempFilePath, {
@@ -19,12 +22,37 @@ const uploadToCloudinary = async (file) => {
             });
             return result.secure_url;
         }
-
-        throw new Error("No file content provided for upload");
     } catch (error) {
-        console.error("Error in uploadToCloudinary:", error);
-        throw error;
+        console.warn("⚠️ Cloudinary upload failed:", error.message || error);
+        console.warn("📁 Falling back to local file storage upload in /uploads...");
+
+        // 2. Resilient local storage fallback
+        const uploadsDir = path.resolve("uploads");
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+
+        const ext = path.extname(file.name || "") || (file.mimetype?.includes("audio") ? ".mp3" : ".jpg");
+        const sanitizedOriginal = (file.name || "file").replace(/[^a-zA-Z0-9.-]/g, "_");
+        const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${sanitizedOriginal}`;
+        const targetPath = path.join(uploadsDir, uniqueFileName);
+
+        if (file.tempFilePath && fs.existsSync(file.tempFilePath)) {
+            fs.copyFileSync(file.tempFilePath, targetPath);
+        } else if (file.data) {
+            fs.writeFileSync(targetPath, file.data);
+        } else if (typeof file.mv === "function") {
+            await file.mv(targetPath);
+        } else {
+            throw new Error("Unable to read file content for upload");
+        }
+
+        const port = process.env.PORT || 5000;
+        const host = process.env.BACKEND_URL || `http://localhost:${port}`;
+        return `${host}/uploads/${uniqueFileName}`;
     }
+
+    throw new Error("No file content provided for upload");
 };
 
 export const createSong = async (req, res, next) => {
