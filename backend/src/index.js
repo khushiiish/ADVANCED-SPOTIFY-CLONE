@@ -73,8 +73,9 @@ if (process.env.NODE_ENV === "production") {
 // error handler
 app.use((err, req, res, next) => {
   console.error("Express Error Handler:", err);
+  const statusCode = err.status || err.http_code || err.statusCode || 500;
   res
-    .status(err.status || 500)
+    .status(statusCode)
     .json({
       message: err.message || "Internal server error",
     });
