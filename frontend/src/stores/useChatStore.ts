@@ -77,7 +77,11 @@ export const useChatStore=create<ChatStore>((set,get)=>({
             socket.on("user_connected",(userId:string)=>{
                 set((state)=>({
                     onlineUsers:new Set([...state.onlineUsers,userId]),
-                }))
+                }));
+                const existingUser = get().users.find((u) => u.clerkId === userId);
+                if (!existingUser) {
+                    get().fetchUsers();
+                }
             });
             socket.on("user_disconnected",(userId:string)=>{
                 set((state)=>{

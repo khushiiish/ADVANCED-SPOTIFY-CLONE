@@ -1,37 +1,46 @@
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import { Loader } from "lucide-react";
-import { axiosInstance} from "@/lib/axios"
+import { axiosInstance } from "@/lib/axios";
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useChatStore } from '@/stores/useChatStore';
 
-
-
-const updateApiToken=(token:string | null)=>{
-    if(token){
-        axiosInstance.defaults.headers.common['Authorization']=`Bearer ${token}`
-    }else{
-        delete axiosInstance.defaults.headers.common['Authorization']
+const updateApiToken = (token: string | null) => {
+    if (token) {
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete axiosInstance.defaults.headers.common['Authorization'];
     }
-}
+};
 
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+    const { getToken, userId, isLoaded, isSignedIn } = useAuth();
+    const { user } = useUser();
+    const [loading, setLoading] = useState(true);
+    const { checkAdminStatus, reset } = useAuthStore();
+    const { initSocket, disconnectSocket } = useChatStore();
 
-const AuthProvider=({children}: {children:React.ReactNode})=>{
+    useEffect(() => {
+        const initAuth = async () => {
+            try {
+                if (!isLoaded) return;
 
-    const {getToken, userId, isLoaded, isSignedIn}=useAuth()
-    const [loading,setLoading]=useState(true);
-    const {checkAdminStatus, reset}=useAuthStore();
-    const {initSocket,disconnectSocket}=useChatStore()
-
-    useEffect(()=>{
-        const initAuth=async()=>{
-            try{
-                if(!isLoaded) return;
-
-                if (isSignedIn && userId) {
+                if (isSignedIn && userId && user) {
                     const token = await getToken();
                     updateApiToken(token);
                     if (token) {
+                        // Ensure user is synced to backend DB
+                        try {
+                            await axiosInstance.post("/auth/callback", {
+                                id: user.id,
+                                firstName: user.firstName,
+                                lastName: user.lastName,
+                                imageUrl: user.imageUrl,
+                            });
+                        } catch (syncErr) {
+                            console.log("Error syncing user in AuthProvider:", syncErr);
+                        }
+
                         await checkAdminStatus();
                         initSocket(userId);
                     }
@@ -39,20 +48,20 @@ const AuthProvider=({children}: {children:React.ReactNode})=>{
                     updateApiToken(null);
                     reset();
                 }
-            }catch(error:any){
+            } catch (error: any) {
                 updateApiToken(null);
                 reset();
                 console.log("Error in auth provider", error);
-            }finally{
-                if(isLoaded){
+            } finally {
+                if (isLoaded) {
                     setLoading(false);
                 }
             }
         };
-    
+
         initAuth();
-        return ()=>disconnectSocket();
-    },[getToken, userId, isLoaded, isSignedIn, checkAdminStatus, reset, initSocket, disconnectSocket])
+        return () => disconnectSocket();
+    }, [getToken, userId, user, isLoaded, isSignedIn, checkAdminStatus, reset, initSocket, disconnectSocket]);
 
     if(loading) return(
         <div className="h-screen w-full flex items-center justify-center">
