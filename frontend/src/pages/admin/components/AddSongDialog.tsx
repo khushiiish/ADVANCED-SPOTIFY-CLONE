@@ -23,6 +23,35 @@ interface NewSong {
 	duration: string;
 }
 
+const getAudioDuration = (file: File): Promise<number> => {
+	return new Promise((resolve) => {
+		const audio = new Audio();
+		const objectUrl = URL.createObjectURL(file);
+		audio.src = objectUrl;
+
+		const cleanUp = () => {
+			URL.revokeObjectURL(objectUrl);
+		};
+
+		audio.onloadedmetadata = () => {
+			const duration = Math.round(audio.duration || 0);
+			cleanUp();
+			resolve(duration);
+		};
+
+		audio.onerror = () => {
+			cleanUp();
+			resolve(0);
+		};
+	});
+};
+
+const formatTime = (seconds: number) => {
+	const minutes = Math.floor(seconds / 60);
+	const remainingSeconds = seconds % 60;
+	return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+};
+
 const AddSongDialog = () => {
 	const { albums, fetchSongs, fetchStats } = useMusicStore();
 	const [songDialogOpen, setSongDialogOpen] = useState(false);
@@ -43,6 +72,20 @@ const AddSongDialog = () => {
 	const audioInputRef = useRef<HTMLInputElement>(null);
 	const imageInputRef = useRef<HTMLInputElement>(null);
 
+	const handleAudioSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+
+		setFiles((prev) => ({ ...prev, audio: file }));
+
+		const durationInSeconds = await getAudioDuration(file);
+		setNewSong((prev) => ({
+			...prev,
+			duration: durationInSeconds.toString(),
+			title: prev.title || file.name.replace(/\.[^/.]+$/, ""),
+		}));
+	};
+
 	const handleSubmit = async () => {
 		setIsLoading(true);
 
@@ -51,11 +94,17 @@ const AddSongDialog = () => {
 				return toast.error("Please upload both audio and image files");
 			}
 
+			let duration = newSong.duration;
+			if (!duration || duration === "0") {
+				const computed = await getAudioDuration(files.audio);
+				duration = computed.toString();
+			}
+
 			const formData = new FormData();
 
 			formData.append("title", newSong.title || files.audio.name.replace(/\.[^/.]+$/, ""));
 			formData.append("artist", newSong.artist || "Unknown Artist");
-			formData.append("duration", newSong.duration || "0");
+			formData.append("duration", duration || "0");
 			if (newSong.album && newSong.album !== "none") {
 				formData.append("albumId", newSong.album);
 			}
@@ -108,7 +157,7 @@ const AddSongDialog = () => {
 						accept='audio/*'
 						ref={audioInputRef}
 						hidden
-						onChange={(e) => setFiles((prev) => ({ ...prev, audio: e.target.files![0] }))}
+						onChange={handleAudioSelect}
 					/>
 
 					<input
@@ -147,10 +196,18 @@ const AddSongDialog = () => {
 					{/* Audio upload */}
 					<div className='space-y-2'>
 						<label className='text-sm font-medium'>Audio File</label>
-						<div className='flex items-center gap-2'>
+						<div className='flex flex-col gap-2'>
 							<Button variant='outline' onClick={() => audioInputRef.current?.click()} className='w-full'>
-								{files.audio ? files.audio.name.slice(0, 20) : "Choose Audio File"}
+								{files.audio ? files.audio.name.slice(0, 30) : "Choose Audio File"}
 							</Button>
+							{files.audio && Number(newSong.duration) > 0 && (
+								<div className='flex items-center justify-between text-xs text-zinc-400 px-1'>
+									<span>Detected duration:</span>
+									<span className='text-emerald-400 font-mono font-medium'>
+										{formatTime(Number(newSong.duration))} ({newSong.duration}s)
+									</span>
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -160,6 +217,7 @@ const AddSongDialog = () => {
 						<Input
 							value={newSong.title}
 							onChange={(e) => setNewSong({ ...newSong, title: e.target.value })}
+							placeholder='Song title'
 							className='bg-zinc-800 border-zinc-700'
 						/>
 					</div>
@@ -169,17 +227,7 @@ const AddSongDialog = () => {
 						<Input
 							value={newSong.artist}
 							onChange={(e) => setNewSong({ ...newSong, artist: e.target.value })}
-							className='bg-zinc-800 border-zinc-700'
-						/>
-					</div>
-
-					<div className='space-y-2'>
-						<label className='text-sm font-medium'>Duration (seconds)</label>
-						<Input
-							type='number'
-							min='0'
-							value={newSong.duration}
-							onChange={(e) => setNewSong({ ...newSong, duration: e.target.value || "0" })}
+							placeholder='Artist name'
 							className='bg-zinc-800 border-zinc-700'
 						/>
 					</div>
