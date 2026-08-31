@@ -7,26 +7,31 @@ import cloudinary from "../lib/cloudinary.js";
 const uploadToCloudinary = async (file) => {
     // 1. Attempt Cloudinary upload
     try {
+        const uploadOptions = {
+            resource_type: "auto",
+            folder: "spotify_clone",
+        };
+
         if (file.tempFilePath) {
-            const result = await cloudinary.uploader.upload(file.tempFilePath, {
-                resource_type: "auto",
-            });
+            const result = await cloudinary.uploader.upload(file.tempFilePath, uploadOptions);
             return result.secure_url;
         }
 
         if (file.data) {
             const b64 = Buffer.from(file.data).toString("base64");
             const dataURI = `data:${file.mimetype};base64,${b64}`;
-            const result = await cloudinary.uploader.upload(dataURI, {
-                resource_type: "auto",
-            });
+            const result = await cloudinary.uploader.upload(dataURI, uploadOptions);
             return result.secure_url;
         }
     } catch (error) {
-        console.warn("⚠️ Cloudinary upload failed:", error.message || error);
-        console.warn("📁 Falling back to local file storage upload in /uploads...");
+        console.error("⚠️ Cloudinary upload failed:", error.message || error);
 
-        // 2. Resilient local storage fallback
+        // In production, warn that local fallback files will not persist on cloud hosts (like Render)
+        if (process.env.NODE_ENV === "production") {
+            console.error("❌ Cloudinary credentials must have 'Create/Upload' permissions for production deployments!");
+        }
+
+        // 2. Resilient local storage fallback (for local development)
         const uploadsDir = path.resolve("uploads");
         if (!fs.existsSync(uploadsDir)) {
             fs.mkdirSync(uploadsDir, { recursive: true });
